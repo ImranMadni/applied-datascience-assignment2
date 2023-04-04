@@ -1,43 +1,46 @@
+import pandas as pd
 import matplotlib.pyplot as plt
-
-def plot_line_chart(data, x_col, y_col, y_label, title):
-
-    # Group data by year and sum the number of fatalities for each country
-    group_data = data.groupby([x_col]).sum()[y_col]
-
-    # Define the graph type and image size
-    ax = group_data.plot(kind='line', figsize=(10,8))
-
-    # Set title and axis labels
-    ax.set_title(title)
-    ax.set_xlabel(x_col)
-    ax.set_ylabel(y_label)
-
-    # Show the graph
-    plt.show()
+import seaborn as sns
 
 # Bar Graph
-def plot_bar_chart(data, x_col, y_col, title, x_label, y_label):
-    """
-    Read a CSV file from the given URL, group the data by the values in the state_column,
-    and create a grouped bar chart showing the values in the murder_columns for each group.
-    """
-    state_data = data.groupby(x_col)[y_col].sum()
+def plot_bar_chart(data, years,title, x_label, y_label):
+
+    # get years with increment of 5
+    year_columns = [str(years) for years in range(1990, 2016, 5)]
+    # Plot bar graph
+    df_bar = data[data['Indicator Name'].isin([title])]
+
+    # Pivot the data to create a new data frame for plotting
+    df_pivot = df_bar.pivot(index='Country Name', columns='Indicator Name', values=year_columns)
     # Define the graph type and image size
-    state_data.plot(kind='bar', figsize=(12,8))
+    ax = df_pivot.plot(kind='bar', rot=0)
     plt.title(title)
     plt.xlabel(x_label)
-    plt.ylabel(y_label)
-    plt.show()    
-
+    # Set the legend labels to only show the year values
+    handles, labels = ax.get_legend_handles_labels()
+    new_labels = [label.split(',')[0][1:] for label in labels]
+    plt.legend(handles, new_labels, title='Year')
+    plt.show()
     
 # Pie Graph
-def plot_pie_chart(data):
-    """
-    Plot a pie chart of the mean GDP per capita by continent.
-    Expects a pandas DataFrame with a 'continent' column and a 'gdpPercap' column.
-    """
-    continent_mean = data.groupby('continent')['gdpPercap'].mean()
-    plt.pie(continent_mean.values, labels=continent_mean.index, autopct='%1.1f%%')
-    plt.title(f'Mean GDP per Capita by Continent in {data["year"].iloc[0]}')
+def plot_heatmap_chart(data,country,indicators,colors):
+    
+    
+    df_sub_heat = data[(data['Country Name'] == country) & (data['Indicator Name'].isin(indicators))]
+
+    # Create a pivot table for the chosen indicators and country
+    pivot_table = pd.pivot_table(df_sub_heat, columns='Indicator Name')
+
+    # Fill any missing values with the mean of the column
+    pivot_table.fillna(pivot_table.mean(), inplace=True)
+
+    # Calculate the correlation matrix for the pivot table
+    corr_matrix = pivot_table.corr()
+
+    # Create a heatmap of the correlation matrix
+    sns.heatmap(corr_matrix, cmap=colors, annot=True, fmt='.2f', square=True)
+
+    plt.title(country)
+    plt.xticks(rotation=90, fontsize=8)
+    plt.yticks(rotation=0, fontsize=8)
     plt.show()
